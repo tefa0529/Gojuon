@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 櫻花日語教室：五十音全圖鑑互動發音字卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FAF6F0;
+        }
+        .font-jp {
+            font-family: 'Noto Serif JP', 'Noto Serif TC', serif;
+        }
+        .font-display {
+            font-family: 'Comfortaa', 'Noto Sans TC', sans-serif;
+        }
+        /* 3D Card Flip CSS */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1.5rem;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #FDA4AF;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-12">
+
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-rose-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl animate-bounce">🌸</span>
+                <div>
+                    <h1 class="text-xl font-bold text-rose-700 font-jp">櫻花日語教室</h1>
+                    <p class="text-xs text-rose-400 font-medium">零基礎「完整五十音」直覺圖像極速記憶法</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="bg-rose-50 text-rose-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-rose-200"><i class="fa-solid fa-graduation-cap mr-1"></i> 全假名自主學習版</span>
+                <span class="bg-emerald-50 text-emerald-600 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-200">語音串接 API 已啟用</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+        
+        <!-- ROW SELECTOR (五十音行選單) -->
+        <div class="mb-6 bg-white p-4 rounded-3xl shadow-sm border border-rose-50">
+            <h3 class="text-xs font-bold text-slate-400 mb-3 flex items-center gap-1.5 pl-1">
+                <i class="fa-solid fa-layer-group text-rose-400"></i> 請選擇五十音行數 (Row)
+            </h3>
+            <div class="flex flex-wrap gap-2 overflow-x-auto pb-1 custom-scrollbar" id="rowSelector">
+                <!-- Populated Dynamically -->
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- LEFT COLUMN: Character Tab + Card + Sketchboard -->
+            <div class="lg:col-span-7 flex flex-col space-y-6">
+                
+                <!-- Character selection for active row -->
+                <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <span class="text-xs font-bold text-slate-500 flex items-center gap-1">
+                        <i class="fa-solid fa-arrow-pointer text-rose-400"></i> 切換假名字母：
+                    </span>
+                    <div class="flex flex-wrap gap-2" id="characterTabs">
+                        <!-- Will be populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- 3D Flashcard Wrapper -->
+                <div class="relative h-[420px] w-full flip-card" id="flashcard">
+                    <div class="flip-card-inner h-full w-full">
+                        
+                        <!-- CARD FRONT: Large Kana, Romaji, and Sound Button -->
+                        <div class="flip-card-front bg-white p-8 shadow-md border border-rose-100 flex flex-col justify-between items-center cursor-pointer hover:shadow-lg transition-shadow">
+                            <div class="w-full flex justify-between items-center">
+                                <span class="text-xs font-semibold text-rose-500 bg-rose-50 px-2.5 py-1 rounded-full"><i class="fa-solid fa-sync mr-1"></i> 點擊翻轉查看台灣人直覺聯想</span>
+                                <button onclick="event.stopPropagation(); playCurrentAudio()" id="voiceBtn" class="bg-rose-500 hover:bg-rose-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-md shadow-rose-200 transition-transform active:scale-95" title="播放真人發音">
+                                    <i class="fa-solid fa-volume-high text-lg animate-pulse"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="flex flex-col items-center my-auto">
+                                <span class="font-jp text-[120px] font-bold text-rose-600 select-none leading-none" id="frontKana">あ</span>
+                                <span class="font-display text-3xl font-bold text-slate-700 mt-4" id="frontRomaji">/ a /</span>
+                            </div>
+                            
+                            <div class="w-full text-center">
+                                <p class="text-xs text-rose-400 font-bold bg-rose-50/50 py-1.5 px-3 rounded-full inline-block" id="frontHint">發音像中文的「啊」</p>
+                            </div>
+                        </div>
+
+                        <!-- CARD BACK: Etymology, Mnemonic illustration & Examples -->
+                        <div class="flip-card-back bg-gradient-to-br from-rose-50/75 to-orange-50/75 p-6 shadow-md border border-rose-100 flex flex-col justify-between cursor-pointer hover:shadow-lg transition-shadow">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-semibold text-rose-500 bg-white/80 backdrop-blur-sm px-2.5 py-1 rounded-full"><i class="fa-solid fa-arrow-left mr-1"></i> 點擊返回正面</span>
+                                <span class="font-jp font-bold text-2xl text-rose-600 bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm" id="backKanaHeader">あ</span>
+                            </div>
+
+                            <div class="my-auto space-y-3.5 text-left">
+                                <div class="bg-white/90 p-2.5 rounded-xl border border-rose-100/50">
+                                    <h4 class="text-xs font-bold text-slate-400 mb-0.5 flex items-center"><i class="fa-solid fa-feather-pointed text-rose-500 mr-1.5"></i> 中國漢字草書源流</h4>
+                                    <p class="text-sm font-semibold text-slate-700">源自草書的「<span class="text-rose-600 font-bold text-base" id="backEtymology">安</span>」字</p>
+                                </div>
+
+                                <div class="bg-white/95 p-3.5 rounded-xl border border-rose-100">
+                                    <h4 class="text-xs font-bold text-slate-400 mb-1 flex items-center"><i class="fa-solid fa-lightbulb text-rose-500 mr-1.5"></i> 台灣人秒懂聯想圖文</h4>
+                                    <p class="text-xs text-slate-600 leading-relaxed font-semibold" id="backMnemonic">
+                                        字型像一個坐在椅子上的「安」靜小孩，張大嘴巴說「啊（a）」！也像一個戴著「安」全帽的機車騎士側面。
+                                    </p>
+                                </div>
+
+                                <div class="bg-rose-500 text-white p-3 rounded-xl shadow-md flex justify-between items-center" onclick="event.stopPropagation()">
+                                    <div class="text-left">
+                                        <h4 class="text-[10px] font-bold opacity-80 flex items-center"><i class="fa-solid fa-book-open mr-1.5"></i> 實用單字</h4>
+                                        <p class="text-sm font-bold font-jp tracking-wide mt-0.5" id="backExample">ありがとう (arigatou)</p>
+                                        <p class="text-[11px] opacity-90 mt-0.5" id="backExampleTranslation">謝謝</p>
+                                    </div>
+                                    <button onclick="playExampleAudio()" class="bg-white text-rose-600 hover:bg-rose-50 w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-transform active:scale-95" title="播放單字讀音">
+                                        <i class="fa-solid fa-volume-high text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">✍️</span>
+                            <h3 class="text-sm font-bold text-slate-700">手寫筆畫描紅練習區</h3>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="clearCanvas()" class="text-xs font-semibold bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg flex items-center transition-colors">
+                                <i class="fa-solid fa-eraser mr-1.5"></i> 清除重畫
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Writing Canvas with background text -->
+                    <div class="relative w-full h-44 bg-slate-50 rounded-2xl border border-slate-200/60 overflow-hidden cursor-crosshair">
+                        <!-- Watermark letter to trace -->
+                        <div id="canvasBackground" class="absolute inset-0 flex items-center justify-center font-jp text-[110px] font-bold text-slate-200/70 select-none pointer-events-none">
+                            あ
+                        </div>
+                        <canvas id="writingCanvas" class="absolute inset-0 w-full h-full z-10"></canvas>
+                    </div>
+                    <p class="text-center text-[11px] text-slate-400">用滑鼠或手指觸控在畫板上，跟著背景字影描寫練習筆跡吧！</p>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Adaptive Quiz + AI Teacher Chat -->
+            <div class="lg:col-span-5 flex flex-col space-y-6">
+                
+                <!-- Interactive Quiz Panel -->
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-lg">🎯</span>
+                            <h3 class="text-sm font-bold text-slate-700" id="quizTitle">隨堂實力大考驗</h3>
+                        </div>
+                        <span class="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full" id="quizRowLabel">あ行</span>
+                    </div>
+
+                    <!-- Question Navigator -->
+                    <div class="flex space-x-2 border-b border-slate-100 pb-3">
+                        <button onclick="switchQuiz(0)" id="qTab0" class="flex-1 py-1 text-[11px] font-bold rounded-lg border text-center transition-all bg-rose-50 text-rose-600 border-rose-200">題 1 (讀音)</button>
+                        <button onclick="switchQuiz(1)" id="qTab1" class="flex-1 py-1 text-[11px] font-bold rounded-lg border text-center transition-all text-slate-500 border-slate-100 bg-slate-50">題 2 (讀音)</button>
+                        <button onclick="switchQuiz(2)" id="qTab2" class="flex-1 py-1 text-[11px] font-bold rounded-lg border text-center transition-all text-slate-500 border-slate-100 bg-slate-50">題 3 (例字)</button>
+                    </div>
+
+                    <!-- Question Content Area -->
+                    <div id="quizContent" class="min-h-[170px] flex flex-col justify-between">
+                        <!-- Dynamic quiz content injected here -->
+                    </div>
+
+                    <!-- Feedback Banner -->
+                    <div id="quizFeedback" class="hidden p-3 rounded-xl border flex items-start space-x-2 text-xs">
+                        <!-- Feedback details dynamic -->
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col h-[380px]">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="relative">
+                                <span class="text-2xl">👩‍🏫</span>
+                                <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white"></span>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-700">櫻花老師 (AI Tutor)</h3>
+                                <p class="text-[9px] text-slate-400 font-medium">46個假名與圖像記憶全解通</p>
+                            </div>
+                        </div>
+                        <span class="text-[9px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">Gemini 3.1 驅動</span>
+                    </div>
+
+                    <!-- Chat Message Area -->
+                    <div id="chatContainer" class="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-1 text-[11px]">
+                        <div class="flex items-start space-x-2">
+                            <div class="bg-rose-50 text-rose-600 p-1.5 rounded-xl font-bold">👩‍🏫</div>
+                            <div class="bg-slate-50 border border-slate-100 text-slate-700 p-2.5 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed">
+                                哈囉！我是櫻花老師。🌸 已經為你把完整的<b>「五十音 46 個平假名」</b>全部準備好囉！<br>
+                                你可以點擊上方的<b>「五十音行數選單」</b>切換不同行（例如：か行、さ行、た行...），每個假名都有專屬的台灣諧音與圖像聯想法喔！有任何拼音或記憶問題隨時問我！
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat input area -->
+                    <div class="mt-2.5 flex items-center space-x-2">
+                        <input type="text" id="chatInput" onkeydown="handleChatKey(event)" placeholder="向櫻花老師提問（例如：き為什麼像鑰匙？）..." class="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-rose-400 focus:bg-white transition-all">
+                        <button onclick="sendChatMessage()" class="bg-rose-500 hover:bg-rose-600 text-white w-8.5 h-8.5 rounded-xl flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-paper-plane text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // Full database of standard 46 Hiragana characters grouped by rows (行)
+        const hiraganaDatabase = {
+            "あ行": [
+                { kana: "あ", romaji: "a", etymology: "安", pronunciation: "a", hint: "發音像國語的「啊」", mnemonic: "像一個戴著「安」全帽的機車騎士側面，騎車時嘴巴張大被風吹得大叫「啊 (a)」！", example: "ありがとう (arigatou)", exampleTranslation: "謝謝" },
+                { kana: "い", romaji: "i", etymology: "以", pronunciation: "i", hint: "發音像國語的「一」", mnemonic: "左長右短兩撇，像兩根「一 (i)」模「一 (i)」樣的精緻筷子。", example: "いぬ (inu)", exampleTranslation: "狗" },
+                { kana: "う", romaji: "u", etymology: "宇", pronunciation: "u", hint: "發音像國語的「嗚」", mnemonic: "像一個人肚子痛、彎著腰，「嗚 (u)」的一聲抱住肚子。上面的一點是痛出來的汗水。", example: "うみ (umi)", exampleTranslation: "海" },
+                { kana: "え", romaji: "e", etymology: "衣", pronunciation: "e", hint: "發音像國語的「欸」", mnemonic: "長得很像一個衝浪選手正踩在衝浪板上，擺出酷炫帥氣的姿勢。旁人齊喊：「欸 (e)！很酷喔！」", example: "えき (eki)", exampleTranslation: "車站" },
+                { kana: "お", romaji: "o", etymology: "於", pronunciation: "o", hint: "發音像國語的「喔」", mnemonic: "字型很像「あ」，但右上方多了一小點，像一隻黑（台語發音：喔 o）烏鴉站在樹枝上，那一點像牠叼著的果實。", example: "おちゃ (ocha)", exampleTranslation: "茶" }
+            ],
+            "か行": [
+                { kana: "か", romaji: "ka", etymology: "加", pronunciation: "ka", hint: "發音像國語的「卡」", mnemonic: "左邊長得像大力士出力的臂膀，右邊是一把「卡 (ka)」住齒輪的卡榫，合力才能往上「加」。", example: "かさ (kasa)", exampleTranslation: "雨傘" },
+                { kana: "き", romaji: "ki", etymology: "幾", pronunciation: "ki", hint: "發音像英文的「Key」(鑰匙)", mnemonic: "字型長得極像一把古老的黃銅「鑰匙 (Key / ki)」，有三打斜、下面是鑰匙圈環。", example: "き (ki)", exampleTranslation: "樹木" },
+                { kana: "く", romaji: "ku", etymology: "久", pronunciation: "ku", hint: "發音像國語的「哭」", mnemonic: "像一個張大嘴巴、正在大聲嚎啕大「哭 (ku)」的鳥嘴嘴型。", example: "くるま (kuruma)", exampleTranslation: "汽車" },
+                { kana: "け", romaji: "ke", etymology: "計", pronunciation: "ke", hint: "發音像台語的「桶 (khei)」", mnemonic: "左邊一條、右邊像一個水桶框，整大個像裝了滿滿一「桶 (台語：khei)」美味啤酒的木桶。", example: "けいだい (keidai)", exampleTranslation: "神社境內" },
+                { kana: "こ", romaji: "ko", etymology: "己", pronunciation: "ko", hint: "發音像國語的「口」", mnemonic: "上下兩橫平行，像一個盒子張開「口 (ko)」對著「口 (ko)」，一高一低互相談天。", example: "こども (kodomo)", exampleTranslation: "孩子" }
+            ],
+            "さ行": [
+                { kana: "さ", romaji: "sa", etymology: "散", pronunciation: "sa", hint: "發音像國語的「殺」", mnemonic: "像一位「殺 (sa)」手正拿著鋒利的武士刀，用力劈砍砍出了火花！", example: "さかな (sakana)", exampleTranslation: "魚" },
+                { kana: "し", romaji: "shi", etymology: "之", pronunciation: "shi", hint: "發音像國語的「吸」", mnemonic: "像一根彎曲的「吸 (shi)」管，或者一個老爺爺用的魚鉤。", example: "しお (shio)", exampleTranslation: "鹽" },
+                { kana: "す", romaji: "su", etymology: "寸", pronunciation: "su", hint: "發音像國語的「速」", mnemonic: "像一個鞦韆在空中飛快盪圈圈，速度快到「速 (su) ── 咻！」的一聲飛過去。", example: "すし (sushi)", exampleTranslation: "壽司" },
+                { kana: "せ", romaji: "se", etymology: "世", pronunciation: "se", hint: "發音像台語的「沙發 (se-pha)」", mnemonic: "字型幾乎和原本漢字「世」一樣，也可以聯想為一個人正舒服地陷在「沙發 (se)」裡看電視。", example: "せんせい (sensei)", exampleTranslation: "老師" },
+                { kana: "そ", romaji: "so", etymology: "曾", pronunciation: "so", hint: "發音像國語的「縮」", mnemonic: "字型像一條「蛇」在草叢中緊緊「縮 (so)」成一團保護自己。", example: "そら (sora)", exampleTranslation: "天空" }
+            ],
+            "た行": [
+                { kana: "た", romaji: "ta", etymology: "太", pronunciation: "ta", hint: "發音像國語的「他」/「踏」", mnemonic: "左邊長得像英文字母「t」，右邊像「a」，加起來剛好就是其羅馬拼音「ta」！", example: "たまご (tamago)", exampleTranslation: "雞蛋" },
+                { kana: "ち", romaji: "chi", etymology: "知", pronunciation: "chi", hint: "發音像國語的「七」", mnemonic: "字型長得跟阿拉伯數字的「7 (chi)」一模一樣，只是多了一條小橫槓。", example: "ちず (chizu)", exampleTranslation: "地圖" },
+                { kana: "つ", romaji: "tsu", etymology: "川", pronunciation: "tsu", hint: "發音像國語的「粗」/「醋」", mnemonic: "像一波巨大「海嘯 (Tsunami / tsu)」猛烈打過來的波浪浪花。", example: "つくえ (tsukue)", exampleTranslation: "桌子" },
+                { kana: "て", romaji: "te", etymology: "天", pronunciation: "te", hint: "發音像台語的「手 (te)」", mnemonic: "像是一隻靈活的「手 (台語：te)」伸出來拿著一塊香噴噴的蛋糕。", example: "てがみ (tegami)", exampleTranslation: "信件" },
+                { kana: "to", romaji: "to", etymology: "止", pronunciation: "to", hint: "發音像國語的「偷」/「透」", mnemonic: "像一個調皮的小孩「偷 (to)」穿大人的鞋子，露出可愛、圓圓的小腳趾丫。", example: "ともだち (tomodachi)", exampleTranslation: "朋友" }
+            ],
+            "な行": [
+                { kana: "な", romaji: "na", etymology: "奈", pronunciation: "na", hint: "發音像國語的「那」", mnemonic: "像一個虔誠的修女在十字架旁祈禱：「那 (na) 麼，請保佑我平安吧！」", example: "なつ (natsu)", exampleTranslation: "夏天" },
+                { kana: "に", romaji: "ni", etymology: "仁", pronunciation: "ni", hint: "發音像國語的「二」/「泥」", mnemonic: "左邊一條豎線，右邊兩小橫。長得就像中文的「二 (ni)」字。", example: "にく (niku)", exampleTranslation: "肉" },
+                { kana: "ぬ", romaji: "nu", etymology: "奴", pronunciation: "nu", hint: "發音像英文的「Noodle」", mnemonic: "像一條熱呼呼的「拉麵 noodle (nu)」，用筷子夾起來時尾端還打了一個圈圈結。", example: "いぬ (inu)", exampleTranslation: "狗" },
+                { kana: "ね", romaji: "ne", etymology: "捏", pronunciation: "ne", hint: "發音像日文的「貓 (neko)」", mnemonic: "字型像一隻小貓，尾巴在右邊緊緊捏「捏 (ne)」捲成一個圈，就像日本貓咪 (neko) 的小短尾。", example: "ねこ (neko)", exampleTranslation: "貓" },
+                { kana: "の", romaji: "no", etymology: "乃", pronunciation: "no", hint: "發音像國語的「no」(否決)", mnemonic: "像一筆畫出的禁止「No (no)」標誌，完美展現了拒絕的圓環姿態。", example: "のり (nori)", exampleTranslation: "海苔" }
+            ],
+            "は行": [
+                { kana: "は", romaji: "ha", etymology: "波", pronunciation: "ha", hint: "發音像國語的「哈」", mnemonic: "左邊一條線，右邊像一朵盛開的花「Hana (ha)」，讓人看了忍不住「哈 (ha) 哈」大笑！", example: "はな (hana)", exampleTranslation: "花" },
+                { kana: "ひ", romaji: "hi", etymology: "比", pronunciation: "hi", hint: "發音像笑聲的「Hi-Hi-Hi」", mnemonic: "像一個嘴巴咧得極大、正發出「Hi-Hi-Hi (hi)」開懷大笑的人臉輪廓。", example: "ひと (hito)", exampleTranslation: "人" },
+                { kana: "ふ", romaji: "fu", etymology: "不", pronunciation: "fu", hint: "發音像國語的「富」", mnemonic: "長得很像雄偉神聖的「富士山 (Fuji / fu)」，山頂還飄著兩片對稱的小白雲。", example: "ふね (fune)", exampleTranslation: "船" },
+                { kana: "へ", romaji: "he", etymology: "弊", pronunciation: "he", hint: "發音像國語的「嘿」/「黑」", mnemonic: "一條簡單的折線，像一個大「山坡 (Hill / he)」，爬上去會發出喘氣：「嘿 (he) 咻 ──！」", example: "へや (heya)", exampleTranslation: "房間" },
+                { kana: "ほ", romaji: "ho", etymology: "保", pronunciation: "ho", hint: "發音像國語的「齁」/「火」", mnemonic: "跟「は」很像，但頭上多了一頂帽子擋住風沙。像一艘張著滿滿風帆的「帆船 (ho)」。", example: "ほん (hon)", exampleTranslation: "書本" }
+            ],
+            "ま行": [
+                { kana: "ま", romaji: "ma", etymology: "末", pronunciation: "ma", hint: "發音像國語的「媽」", mnemonic: "字型很像「媽媽 (ma-ma)」的「媽」，上面兩橫是她頭上夾著的兩個閃亮亮髮夾。", example: "まち (machi)", exampleTranslation: "城鎮" },
+                { kana: "み", romaji: "mi", etymology: "美", pronunciation: "mi", hint: "發音像音符的「Mi」", mnemonic: "像一個草書的音樂符號，音階就唱作「Mi (mi) ──」，圓潤又有旋律感。", example: "みず (mizu)", exampleTranslation: "水" },
+                { kana: "む", romaji: "mu", etymology: "無", pronunciation: "mu", hint: "發音像牛叫聲的「牟～」", mnemonic: "像一隻胖嘟嘟的牛躺在地上發出「牟 (Mu / mu) ──」的叫聲，右邊是牠甩尾巴在趕蚊子。", example: "むし (mushi)", exampleTranslation: "昆蟲" },
+                { kana: "め", romaji: "me", etymology: "女", pronunciation: "me", hint: "發音像日文的「眼睛 (me)」", mnemonic: "長得很像「ぬ」但最後沒有轉圈圈。像一隻張開的「眼睛 (Me / me)」，眼神非常溫柔明亮。", example: "め (me)", exampleTranslation: "眼睛" },
+                { kana: "も", romaji: "mo", etymology: "毛", pronunciation: "mo", hint: "發音像國語的「毛」", mnemonic: "字型直接就是一根柔軟的「毛」筆。也可以聯想為魚鉤釣到了兩隻魚：要吃「More (mo)」多一點！", example: "もり (mori)", exampleTranslation: "森林" }
+            ],
+            "や行": [
+                { kana: "や", romaji: "ya", etymology: "也", pronunciation: "ya", hint: "發音像國語的「呀」", mnemonic: "字型極像野生「犛牛 (Yak / ya)」的大牛角與牛頭輪廓。", example: "やま (yama)", exampleTranslation: "山" },
+                { kana: "ゆ", romaji: "yu", etymology: "由", pronunciation: "yu", hint: "發音像國語的「優」", mnemonic: "像一條肥美的「魚 (yu)」在清澈的水裡自由自在游來游去，吐著泡泡。", example: "ゆき (yuki)", exampleTranslation: "雪" },
+                { kana: "よ", romaji: "yo", etymology: "與", pronunciation: "yo", hint: "發音像玩具「Yo-Yo」", mnemonic: "像一個掛在手指繩圈上的「溜溜球 (Yo-Yo / yo)」，正甩下去準備高速旋轉！", example: "よる (yoru)", exampleTranslation: "夜晚" }
+            ],
+            "ら行": [
+                { kana: "ら", romaji: "ra", etymology: "良", pronunciation: "ra", hint: "發音像國語的「拉」", mnemonic: "上面一小點、下面一彎。長得極像一隻吹奏起響亮樂音的「喇叭 (ra)」。", example: "らいげつ (raigetsu)", exampleTranslation: "下個月" },
+                { kana: "り", romaji: "ri", etymology: "利", pronunciation: "ri", hint: "發音像國語的「哩」", mnemonic: "左短右長兩條水流，長得很像兩片切開、多汁甜美的「梨子 (ri)」。", example: "りんご (ringo)", exampleTranslation: "蘋果" },
+                { kana: "る", romaji: "ru", etymology: "留", pronunciation: "ru", hint: "發音像國語的「路」", mnemonic: "像一條歪歪扭扭的「道路 (ru)」，最後在盡頭繞了一圈打了一個圓結。", example: "るす (rusu)", exampleTranslation: "不在家" },
+                { kana: "れ", romaji: "re", etymology: "禮", pronunciation: "re", hint: "發音像國語的「咧」", mnemonic: "像一隻小狗對著路人「咧 (re)」開嘴巴、吐出舌頭賣萌撒嬌的可愛模樣。", example: "れいぞうこ (reizouko)", exampleTranslation: "冰箱" },
+                { kana: "ろ", romaji: "ro", etymology: "呂", pronunciation: "ro", hint: "發音像國語的「若」/「落」", mnemonic: "跟「る」一模一樣，但是到了路的盡頭「沒有圈圈」，路直接通「落 (ro)」下去了。", example: "ろく (roku)", exampleTranslation: "六" }
+            ],
+            "わ行": [
+                { kana: "わ", romaji: "wa", etymology: "和", pronunciation: "wa", hint: "發音像國語的「哇」", mnemonic: "像一隻象徵「和平 (Wa / wa)」的白鴿在蔚藍天空中展翅高飛的帥氣背影。", example: "わたし (watashi)", exampleTranslation: "我" },
+                { kana: "を", romaji: "wo", etymology: "乎", pronunciation: "wo", hint: "發音像國語的「喔」", mnemonic: "像一個田徑運動員在奔跑中，帥氣「跨欄」騰空飛躍的瞬間！", example: "ほんをよむ (hon wo yomu)", exampleTranslation: "讀書 (此字專用於助詞)" },
+                { kana: "ん", romaji: "n", etymology: "无", pronunciation: "n", hint: "發音像國語的「嗯」", mnemonic: "長得像英文字母小寫的「n」，或是草寫的「h」，是唯一的獨立鼻音「嗯 (n)」。", example: "にほん (nihon)", exampleTranslation: "日本" }
+            ]
+        };
+
+        let currentGroup = "あ行";
+        let currentIndex = 0;
+        let currentQuizIndex = 0;
+        let quizAnswers = {}; // To track student score if desired
+
+        window.onload = function() {
+            renderGroupSelector();
+            selectGroup("あ行");
+            initCanvas();
+            
+            // Flip card click handler
+            document.getElementById('flashcard').addEventListener('click', function() {
+                this.classList.toggle('flipped');
+            });
+        }
+
+        function renderGroupSelector() {
+            const selector = document.getElementById('rowSelector');
+            selector.innerHTML = '';
+            
+            Object.keys(hiraganaDatabase).forEach(group => {
+                const button = document.createElement('button');
+                button.onclick = () => selectGroup(group);
+                button.id = `rowBtn-${group}`;
+                
+                // Add tiny emojis for aesthetic touch
+                let emoji = "🌸";
+                if(group === "か行") emoji = "🍂";
+                else if(group === "さ行") emoji = "🍁";
+                else if(group === "た行") emoji = "🍃";
+                else if(group === "な行") emoji = "🍀";
+                else if(group === "は行") emoji = "🌾";
+                else if(group === "ま行") emoji = "🎋";
+                else if(group === "や行") emoji = "🌻";
+                else if(group === "ら行") emoji = "🌲";
+                else if(group === "わ行") emoji = "🌊";
+
+                button.className = "px-3.5 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all duration-300 ";
+                button.innerHTML = `${emoji} ${group}`;
+                selector.appendChild(button);
+            });
+        }
+
+        function selectGroup(group) {
+            currentGroup = group;
+            currentIndex = 0;
+            
+            // Update active state in Row Selector
+            Object.keys(hiraganaDatabase).forEach(g => {
+                const btn = document.getElementById(`rowBtn-${g}`);
+                if (btn) {
+                    if (g === group) {
+                        btn.className = "px-3.5 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all duration-300 bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100";
+                    } else {
+                        btn.className = "px-3.5 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap transition-all duration-300 bg-white text-slate-600 border-slate-200/80 hover:bg-rose-50/50";
+                    }
+                }
+            });
+
+            renderCharacterTabs();
+            selectCharacter(0);
+            generateGroupQuizzes();
+            switchQuiz(0);
+        }
+
+        function renderCharacterTabs() {
+            const container = document.getElementById('characterTabs');
+            container.innerHTML = '';
+            
+            const chars = hiraganaDatabase[currentGroup];
+            chars.forEach((item, index) => {
+                const button = document.createElement('button');
+                button.id = `charTab-${index}`;
+                button.onclick = () => selectCharacter(index);
+                button.className = "w-10 h-10 rounded-xl text-sm font-bold font-jp border transition-all duration-200";
+                button.innerText = item.kana;
+                container.appendChild(button);
+            });
+        }
+
+        function selectCharacter(index) {
+            const card = document.getElementById('flashcard');
+            card.classList.remove('flipped');
+            
+            setTimeout(() => {
+                currentIndex = index;
+                
+                // Update character subtab styles
+                const chars = hiraganaDatabase[currentGroup];
+                chars.forEach((_, idx) => {
+                    const tab = document.getElementById(`charTab-${idx}`);
+                    if (tab) {
+                        if (idx === index) {
+                            tab.className = "w-10 h-10 rounded-xl text-sm font-bold font-jp border transition-all duration-200 bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100";
+                        } else {
+                            tab.className = "w-10 h-10 rounded-xl text-sm font-bold font-jp border transition-all duration-200 bg-slate-50 text-slate-600 border-slate-200/60 hover:bg-slate-100";
+                        }
+                    }
+                });
+
+                loadCardData();
+                clearCanvas();
+            }, card.classList.contains('flipped') ? 300 : 0);
+        }
+
+        function loadCardData() {
+            const data = hiraganaDatabase[currentGroup][currentIndex];
+            document.getElementById('frontKana').innerText = data.kana;
+            document.getElementById('frontRomaji').innerText = `/ ${data.romaji} /`;
+            document.getElementById('frontHint').innerText = data.hint;
+            
+            document.getElementById('backKanaHeader').innerText = data.kana;
+            document.getElementById('backEtymology').innerText = data.etymology;
+            document.getElementById('backMnemonic').innerText = data.mnemonic;
+            document.getElementById('backExample').innerText = data.example;
+            document.getElementById('backExampleTranslation').innerText = data.exampleTranslation;
+            document.getElementById('canvasBackground').innerText = data.kana;
+        }
+
+        let groupQuizzes = [];
+        function generateGroupQuizzes() {
+            const chars = hiraganaDatabase[currentGroup];
+            const allKanas = Object.values(hiraganaDatabase).flat();
+            
+            // Build dynamic quizzes based on currently selected row!
+            const q1_char = chars[0];
+            const q2_char = chars[Math.min(chars.length - 1, 3)];
+            const q3_char = chars[Math.min(chars.length - 1, 1)];
+
+            // Helper to get random unique romajis as distractors
+            const getDistractors = (correctRomaji, num = 2) => {
+                const uniqueRomajis = [...new Set(allKanas.map(k => k.romaji))].filter(r => r !== correctRomaji);
+                // Shuffle and pick
+                return uniqueRomajis.sort(() => 0.5 - Math.random()).slice(0, num);
+            };
+
+            const distractorsQ1 = getDistractors(q1_char.romaji);
+            const distractorsQ2 = getDistractors(q2_char.romaji);
+
+            groupQuizzes = [
+                {
+                    type: "single",
+                    title: `看字選讀音 🔍 (${currentGroup})`,
+                    question: `請問平假名「${q1_char.kana}」的正確羅馬拼音讀音是什麼？`,
+                    options: [q1_char.romaji, distractorsQ1[0], distractorsQ1[1]].sort(() => 0.5 - Math.random()),
+                    correct: q1_char.romaji,
+                    explanation: `「${q1_char.kana}」源自草書「${q1_char.etymology}」，聯想口訣：${q1_char.mnemonic}`
+                },
+                {
+                    type: "single",
+                    title: `看字選讀音 🔍 (${currentGroup})`,
+                    question: `請問平假名「${q2_char.kana}」的正確羅馬拼音讀音是什麼？`,
+                    options: [distractorsQ2[0], q2_char.romaji, distractorsQ2[1]].sort(() => 0.5 - Math.random()),
+                    correct: q2_char.romaji,
+                    explanation: `「${q2_char.kana}」源自草書「${q2_char.etymology}」，聯想口訣：${q2_char.mnemonic}`
+                },
+                {
+                    type: "single",
+                    title: `看例字選意思 📖 (${currentGroup})`,
+                    question: `請問實用單字「${q3_char.example}」的中文意思是什麼？`,
+                    options: [q3_char.exampleTranslation, "水", "謝謝", "老師", "再見"].filter((value, index, self) => self.indexOf(value) === index).slice(0, 3).sort(() => 0.5 - Math.random()),
+                    correct: q3_char.exampleTranslation,
+                    explanation: `「${q3_char.example}」發音為 ${q3_char.example.replace(/[^a-zA-Z]/g, '')}，意思是：${q3_char.exampleTranslation}。`
+                }
+            ];
+
+            document.getElementById('quizRowLabel').innerText = currentGroup;
+        }
+
+        function switchQuiz(index) {
+            currentQuizIndex = index;
+            
+            // Update tabs active state
+            for(let i=0; i<3; i++) {
+                const tab = document.getElementById(`qTab${i}`);
+                if (tab) {
+                    if (i === index) {
+                        tab.className = "flex-1 py-1 text-[11px] font-bold rounded-lg border text-center transition-all bg-rose-50 text-rose-600 border-rose-200";
+                    } else {
+                        tab.className = "flex-1 py-1 text-[11px] font-bold rounded-lg border text-center transition-all text-slate-500 border-slate-100 bg-slate-50";
+                    }
+                }
+            }
+
+            // Hide Feedback Banner
+            document.getElementById('quizFeedback').className = "hidden";
+            renderQuizContent();
+        }
+
+        function renderQuizContent() {
+            const quiz = groupQuizzes[currentQuizIndex];
+            const area = document.getElementById('quizContent');
+            area.innerHTML = '';
+
+            const title = document.createElement('h4');
+            title.className = "text-xs font-bold text-slate-700 mb-2";
+            title.innerText = quiz.title;
+            area.appendChild(title);
+
+            const qText = document.createElement('p');
+            qText.className = "text-[11px] text-slate-500 mb-3.5 leading-relaxed font-semibold";
+            qText.innerText = quiz.question;
+            area.appendChild(qText);
+
+            const optionsGrid = document.createElement('div');
+            optionsGrid.className = "grid grid-cols-3 gap-2.5";
+
+            quiz.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.onclick = () => checkQuizAnswer(opt, btn);
+                btn.className = "py-2 px-1 text-[11px] font-bold bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl transition-all active:scale-95 text-slate-700 truncate";
+                btn.innerText = opt;
+                optionsGrid.appendChild(btn);
+            });
+            area.appendChild(optionsGrid);
+        }
+
+        function checkQuizAnswer(selectedOpt, buttonElement) {
+            const quiz = groupQuizzes[currentQuizIndex];
+            const feedback = document.getElementById('quizFeedback');
+            
+            if (selectedOpt === quiz.correct) {
+                feedback.className = "p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 flex items-start space-x-2 text-xs mt-3 animate-bounce";
+                feedback.innerHTML = `
+                    <span class="text-base">🎉</span>
+                    <div>
+                        <p class="font-bold">非常優秀！答對了！</p>
+                        <p class="mt-0.5 opacity-90 text-[10px]">${quiz.explanation}</p>
+                    </div>
+                `;
+                playTTS("素晴らしい", "ja-JP"); // Optional positive feedback voice
+            } else {
+                feedback.className = "p-3.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 flex items-start space-x-2 text-xs mt-3";
+                feedback.innerHTML = `
+                    <span class="text-base">😢</span>
+                    <div>
+                        <p class="font-bold">答錯囉，沒關係！</p>
+                        <p class="mt-0.5 opacity-90 text-[10px]">提示：請將目前卡片翻轉到背面，溫習我的台灣人直覺圖像諧音記憶法喔！</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function playTTS(text, lang = "ja-JP") {
+            const apiKey = ""; // Canvas automatically supplies keys in runtime.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            try {
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `Say clearly in standard, native ${lang === 'ja-JP' ? 'Japanese' : 'Traditional Chinese'}: ${text}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: "Kore" } // "Kore" represents an upbeat, firm voice
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("TTS API call failed");
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                } else {
+                    throw new Error("No inline audio data found");
+                }
+
+            } catch (error) {
+                console.warn("Gemini TTS connection rate failed or pending, playing native fallback synthesizer.", error);
+                playNativeFallbackTTS(text, lang);
+            }
+        }
+
+        // Helpers for Audio Decoding
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16Array, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16Array.length * 2);
+            const view = new DataView(buffer);
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcm16Array.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // Linear PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16Array.length * 2, true);
+            for (let i = 0; i < pcm16Array.length; i++) {
+                view.setInt16(44 + i * 2, pcm16Array[i], true);
+            }
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function playNativeFallbackTTS(text, lang) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = 0.8;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Pronunciation Audio Triggers
+        function playCurrentAudio() {
+            const data = hiraganaDatabase[currentGroup][currentIndex];
+            playTTS(data.kana, "ja-JP");
+        }
+
+        function playExampleAudio() {
+            const data = hiraganaDatabase[currentGroup][currentIndex];
+            const cleanText = data.example.split(" ")[0].replace(/[^ぁ-んァ-ヶ一-龠々]/g, '');
+            playTTS(cleanText, "ja-JP");
+        }
+
+        let canvas, ctx, isDrawing = false;
+
+        function initCanvas() {
+            canvas = document.getElementById('writingCanvas');
+            ctx = canvas.getContext('2d');
+            
+            adjustCanvasSize();
+            window.addEventListener('resize', adjustCanvasSize);
+
+            // Mouse Interactions
+            canvas.addEventListener('mousedown', startDrawingLine);
+            canvas.addEventListener('mousemove', drawLine);
+            canvas.addEventListener('mouseup', stopDrawingLine);
+            canvas.addEventListener('mouseleave', stopDrawingLine);
+
+            // Touch device alternative support
+            canvas.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                startDrawingLine({ clientX: touch.clientX, clientY: touch.clientY });
+                e.preventDefault();
+            });
+            canvas.addEventListener('touchmove', (e) => {
+                const touch = e.touches[0];
+                drawLine({ clientX: touch.clientX, clientY: touch.clientY });
+                e.preventDefault();
+            });
+            canvas.addEventListener('touchend', stopDrawingLine);
+        }
+
+        function adjustCanvasSize() {
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+            setupCanvasBrush();
+        }
+
+        function setupCanvasBrush() {
+            ctx.strokeStyle = '#E11D48'; // Active Rose color
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function startDrawingLine(e) {
+            isDrawing = true;
+            ctx.beginPath();
+            const rect = canvas.getBoundingClientRect();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        }
+
+        function drawLine(e) {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
+        }
+
+        function stopDrawingLine() {
+            isDrawing = false;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            setupCanvasBrush();
+        }
+
+        const chatHistory = [];
+
+        function handleChatKey(e) {
+            if (e.key === "Enter") {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            // Render User bubble
+            renderBubble(prompt, "user");
+            input.value = "";
+
+            // Render Teacher Typing placeholder
+            const placeholderId = "placeholder-" + Date.now();
+            renderBubble("正在思考中... 👩‍🏫💭", "teacher", placeholderId);
+
+            const container = document.getElementById('chatContainer');
+            container.scrollTop = container.scrollHeight;
+
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            // Call Gemini 3.1 Flash for active discussion
+            const apiKey = ""; // canvas runtime injects key
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const systemPrompt = `
+                你是一位名叫「櫻花老師」的日語初學家教，性格和藹可親、熱情、極度有耐心，專門輔導台灣零基礎學習者。
+                你掌握了日文平假名全部 46 個假名的漢字源流以及「台灣人直覺諧音、圖像聯想口訣」，可以隨時為學生指點迷津。
+                請始終以「繁體中文（台灣習慣）」回覆。回覆字數嚴格控制在120字內，保持親切、扼要、簡潔明瞭，必要時使用可愛的顏文字表情。
+            `;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: chatHistory,
+                        systemInstruction: {
+                            parts: [{ text: systemPrompt }]
+                        }
+                    })
+                });
+
+                if (!response.ok) throw new Error("API call failed");
+                const result = await response.json();
+                const aiResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，櫻花老師剛剛分神了，可以請你再說一次嗎？";
+
+                // Update placeholder bubble with actual response
+                document.getElementById(placeholderId).innerText = aiResponse;
+                chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+
+            } catch (error) {
+                console.error("Chat error", error);
+                document.getElementById(placeholderId).innerText = "（櫻花老師目前訊號微弱中，不過她提醒你：不論學到哪一字，多聽多看多畫就是最棒的五十音祕訣唷！加油！❤️）";
+            }
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderBubble(text, sender, id = null) {
+            const container = document.getElementById('chatContainer');
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex items-start space-x-2 ${sender === 'user' ? 'justify-end' : ''}`;
+
+            if (sender === "user") {
+                wrapper.innerHTML = `
+                    <div class="bg-rose-500 text-white p-2.5 rounded-2xl rounded-tr-none max-w-[85%] leading-relaxed shadow-sm">
+                        ${text}
+                    </div>
+                    <div class="bg-slate-200 text-slate-600 p-1.5 rounded-xl font-bold text-[10px]">我</div>
+                `;
+            } else {
+                wrapper.innerHTML = `
+                    <div class="bg-rose-50 text-rose-600 p-1.5 rounded-xl font-bold text-[10px]">👩‍🏫</div>
+                    <div id="${id || ''}" class="bg-slate-50 border border-slate-100 text-slate-700 p-2.5 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed">
+                        ${text}
+                    </div>
+                `;
+            }
+            container.appendChild(wrapper);
+        }
+    </script>
+</body>
+</html>
